@@ -1,0 +1,28 @@
+name: Monthly upstream merge
+on:
+  schedule:
+    - cron: "17 6 1 * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch upstream sources
+        run: |
+          mkdir -p src
+          curl -sL https://raw.githubusercontent.com/iannuttall/binlist-data/master/binlist-data.csv -o src/iannuttall.csv
+          curl -sL https://raw.githubusercontent.com/venelinkochev/bin-list-data/master/bin-list-data.csv -o src/venelinkochev.csv
+      - name: Merge
+        run: python3 merge.py . && rm -rf src
+      - name: Open a pull request if anything changed
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "Monthly upstream merge"
+          title: "Monthly upstream merge"
+          body: "Automated re-run of merge.py against the upstream sources. Review summary.json and conflicts.csv before merging."
+          branch: automated/upstream-merge
+          delete-branch: true
